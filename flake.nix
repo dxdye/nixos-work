@@ -18,6 +18,23 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Anwendungscode: Deno-API und Elixir-Poller.
+    #
+    # flake = false, weil das Repo kein eigenes flake.nix hat - Nix behandelt
+    # es dann als reine Quellenablage.
+    #
+    # Der Clou: flake.lock haelt fest, WELCHER Commit gerade laeuft. Damit ist
+    # `git log flake.lock` der Deployment-Verlauf, und ein Rollback ist ein
+    # Zurueckgehen auf eine alte Lock-Datei.
+    #
+    # Aktualisieren:  nix flake update pw23-be
+    # Zum Entwickeln: url = "path:/home/tw/Programme/pw23-BE";  (nicht
+    #                 reproduzierbar, deshalb nicht als Dauerzustand)
+    pw23-be = {
+      url = "git+ssh://git@github.com/dxdye/pw23-BE?ref=main";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, disko, agenix, ... }@inputs: {

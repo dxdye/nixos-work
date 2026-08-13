@@ -7,7 +7,7 @@
     ../../modules/base.nix
     ../../modules/web.nix
     ../../modules/nextcloud.nix
-    # ../../modules/containers.nix   # Phase 6: Deno + Elixir
+    ../../modules/pw23-be.nix
   ];
 
   # Standortspezifische Werte an alle Module durchreichen. Die Module
