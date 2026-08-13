@@ -246,7 +246,15 @@ in
 
       ExecStartPre = migrate;
       ExecStart = "${timemachine}/bin/timemachine start";
-      ExecStop = "${timemachine}/bin/timemachine stop";
+
+      # KEIN ExecStop mit `bin/timemachine stop`: Das arbeitet ueber
+      # Erlang-RPC und braucht einen erreichbaren Knoten - den es wegen
+      # RELEASE_DISTRIBUTION=none nicht gibt. Es scheitert dann mit
+      #   --rpc-eval : Cannot run --rpc-eval if the node is not alive
+      # und laesst die Unit bei jedem Neustart als "failed" zurueck.
+      #
+      # systemds Standard ist SIGTERM, und darauf reagiert die Anwendung
+      # sauber ("SIGTERM received - shutting down").
 
       NoNewPrivileges = true;
       PrivateTmp = true;
