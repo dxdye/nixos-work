@@ -5,26 +5,23 @@
   nixpkgs.hostPlatform = "x86_64-linux";
 
   # --------------------------------------------------------------------------
-  # Boot - UEFI mit systemd-boot
+  # Boot - Legacy BIOS mit GRUB
   #
-  # Die alte Paris-Instanz bootete noch per BIOS (grub-pc installiert,
-  # grub-efi-amd64 nur als Konfigurationsleiche). Die neue Instanz wird auf
-  # UEFI aufgesetzt, deshalb systemd-boot statt GRUB - weniger beweglich,
-  # kein separates Installieren in den MBR.
+  # Vultr bootet diese Instanz im BIOS-Modus, nicht per UEFI. Auf der Maschine
+  # verifiziert mit:  [ -d /sys/firmware/efi ] && echo UEFI || echo BIOS
   #
-  # ⚠ Auf der Zielmaschine pruefen, BEVOR nixos-anywhere laeuft:
-  #     [ -d /sys/firmware/efi ] && echo UEFI || echo BIOS
-  #   Meldet sie BIOS, hier auf GRUB umstellen UND in disko.nix die
-  #   EF02-Partition aktivieren:
-  #     boot.loader.grub = { enable = true; device = "/dev/vda";
-  #                          configurationLimit = 5; };
+  # Der erste Installationsversuch lief auf systemd-boot: Die Installation ging
+  # sauber durch, aber die Firmware konnte die EFI-Dateien nicht lesen und die
+  # Maschine fiel auf die Installer-ISO zurueck. GRUB schreibt stattdessen in
+  # den MBR von /dev/vda und nutzt die EF02-Partition aus disko.nix.
+  #
+  # ⚠ Bei einer kuenftigen Instanz vorher pruefen. Meldet sie UEFI, hier auf
+  #   systemd-boot zurueckstellen UND in disko.nix die ESP aktivieren.
   # --------------------------------------------------------------------------
-  boot.loader = {
-    systemd-boot = {
-      enable = true;
-      configurationLimit = 5; # nur 5 Generationen im Bootmenue -> spart Platz
-    };
-    efi.canTouchEfiVariables = true;
+  boot.loader.grub = {
+    enable = true;
+    device = "/dev/vda";
+    configurationLimit = 5; # nur 5 Generationen im Bootmenue -> spart Platz
   };
 
   boot.initrd.availableKernelModules = [
@@ -58,14 +55,13 @@
   # einer statischen Adresse waere nach der Installation nicht mehr korrigierbar,
   # ohne ueber die Webkonsole zu gehen.
   #
-  # Werte der ALTEN Instanz (Paris), zur Referenz:
-  #   ens3   104.238.190.14/23          Gateway 104.238.190.1
-  #          2001:19f0:6801:36:5400:3ff:fe27:393e/64   (SLAAC)
-  #   ens9   vorhanden, aber DOWN (Vultr Private Network, ungenutzt)
+  # Ist-Werte dieser Instanz (Amsterdam), abgelesen im Installer:
+  #   ens3   95.179.148.48/23           Gateway 95.179.148.1
+  #          2a05:f480:1400:393b:.../64 (SLAAC + Privacy Extension)
   #
-  # ⚠ Nach dem Anlegen der neuen Instanz anzupassen:
-  #     - Interface-Name pruefen:  ip -br a
-  #     - Gateway fuer die Metadaten-Route:  ip route | grep default
+  # Zur Referenz, die alte Paris-Instanz:
+  #   ens3   104.238.190.14/23          Gateway 104.238.190.1
+  #          2001:19f0:6801:36:5400:3ff:fe27:393e/64
   # --------------------------------------------------------------------------
   networking = {
     useDHCP = false;
@@ -73,9 +69,9 @@
       useDHCP = true;
 
       # Vultr-Metadatendienst: link-local Adresse, aber ueber das Gateway
-      # geroutet. Wird gerne vergessen. Gateway der NEUEN Instanz eintragen.
+      # geroutet. Wird gerne vergessen.
       ipv4.routes = [
-        { address = "169.254.169.254"; prefixLength = 32; via = "GATEWAY-DER-NEUEN-INSTANZ"; }
+        { address = "169.254.169.254"; prefixLength = 32; via = "95.179.148.1"; }
       ];
 
       # IPv6 kommt per Router Advertisement. Falls das nicht greift,

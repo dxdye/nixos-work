@@ -21,27 +21,37 @@
       type = "gpt";
       partitions = {
 
-        # --- UEFI-Variante (aktiv) ---
-        ESP = {
+        # --- BIOS-Variante (aktiv) ---
+        # Vultr bootet diese Instanz im Legacy-BIOS-Modus. Verifiziert auf der
+        # Maschine mit:  [ -d /sys/firmware/efi ] && echo UEFI || echo BIOS
+        #
+        # Der erste Versuch lief auf UEFI mit systemd-boot: Die Installation
+        # ging durch, aber die Firmware konnte die EFI-Dateien nicht lesen und
+        # fiel auf die ISO zurueck. Daher hier eine BIOS-Boot-Partition.
+        #
+        # Die 1 MB sind kein Dateisystem, sondern reiner Ablageplatz fuer GRUBs
+        # core.img - auf GPT fehlt sonst der Bereich hinter dem MBR, den GRUB
+        # bei MBR-Platten benutzt. /boot liegt spaeter einfach auf "/".
+        boot = {
           priority = 1;
-          name = "ESP";
-          size = "512M";
-          type = "EF00";
-          content = {
-            type = "filesystem";
-            format = "vfat";
-            mountpoint = "/boot";
-            mountOptions = [ "umask=0077" ];
-          };
+          size = "1M";
+          type = "EF02";
         };
 
-        # --- BIOS-Variante: falls /sys/firmware/efi FEHLT, ESP oben
-        #     auskommentieren und stattdessen das hier aktivieren.
-        #     Zusaetzlich in hardware.nix auf GRUB umstellen.
-        # boot = {
+        # --- UEFI-Variante: falls eine kuenftige Instanz UEFI meldet, die
+        #     boot-Partition oben auskommentieren und stattdessen das hier
+        #     aktivieren. Zusaetzlich in hardware.nix auf systemd-boot zurueck.
+        # ESP = {
         #   priority = 1;
-        #   size = "1M";
-        #   type = "EF02";   # BIOS boot partition, damit GRUB auf GPT passt
+        #   name = "ESP";
+        #   size = "512M";
+        #   type = "EF00";
+        #   content = {
+        #     type = "filesystem";
+        #     format = "vfat";
+        #     mountpoint = "/boot";
+        #     mountOptions = [ "umask=0077" ];
+        #   };
         # };
 
         # Echte Swap-Partition statt Swapfile: sauberer, und der Installer
