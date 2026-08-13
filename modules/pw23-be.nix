@@ -8,10 +8,17 @@ let
   denoState = "/var/lib/pw23-be";
   elixirState = "/var/lib/timemachine";
 
-  # Die materialisierte Timeline landet direkt im Webroot, damit nginx sie
-  # ohne Umweg ueber einen Dienst ausliefert. Genau dafuer hat der Elixir-Teil
-  # keinen HTTP-Port - siehe den Kommentar in timemachine/mix.exs.
-  timelinePath = "/var/www/${site.domain}/html/timeline.json";
+  # Die materialisierte Timeline liegt im Zustandsverzeichnis des Dienstes,
+  # NICHT im Webroot. nginx liefert genau diese eine Datei per alias aus.
+  #
+  # Der naheliegende Weg waere gewesen, direkt nach /var/www/.../html zu
+  # schreiben. Das haette den Webroot gruppenschreibbar gemacht - und damit
+  # jedem Mitglied der nginx-Gruppe erlaubt, beliebige Dateien der Website zu
+  # veraendern. Fuer eine einzelne JSON-Datei ein schlechter Tausch.
+  #
+  # So schreibt der Dienst nur in sein eigenes Verzeichnis, und nginx liest
+  # dort (Verzeichnis 0755, Datei 0644 durch UMask).
+  timelinePath = "${elixirState}/timeline.json";
 
   # Elixir-Release. mixRelease erzeugt ein eigenstaendiges Paket mit
   # mitgeliefertem BEAM - auf dem Zielsystem wird kein Elixir gebraucht.
@@ -79,7 +86,8 @@ in
   #                GitHub-Daten. nginx reicht /api/ dorthin weiter.
   #
   #   timemachine  Elixir, KEIN HTTP-Port. Pollt GitHub und schreibt eine
-  #                timeline.json in den Webroot, die nginx statisch ausliefert.
+  #                timeline.json in sein Zustandsverzeichnis, die nginx per
+  #                alias unter /timeline.json statisch ausliefert.
   #
   # Beide lesen ihre Konfiguration zur Laufzeit aus der Umgebung.
   #
@@ -205,13 +213,15 @@ in
       Restart = "always";
       RestartSec = "30s";
 
-      # Kein DynamicUser: der Dienst schreibt in den Webroot, und der gehoert
-      # nginx. Ein fester Benutzer in der nginx-Gruppe ist hier ehrlicher als
-      # ein wechselnder mit Sonderrechten.
+      # Kein DynamicUser: der legt StateDirectory unter /var/lib/private ab,
+      # und das ist 0700 root - nginx koennte das Verzeichnis nicht einmal
+      # betreten, um die timeline.json zu lesen. Ein fester Systembenutzer
+      # mit 0755 auf dem Zustandsverzeichnis loest das ohne Sonderrechte.
       User = "timemachine";
-      Group = "nginx";
+      Group = "timemachine";
       StateDirectory = "timemachine";
-      UMask = "0022"; # nginx muss die timeline.json lesen koennen
+      StateDirectoryMode = "0755"; # nginx muss hinein
+      UMask = "0022";              # timeline.json wird 0644
 
       ExecStartPre = migrate;
       ExecStart = "${timemachine}/bin/timemachine start";
@@ -224,18 +234,19 @@ in
       RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
       MemoryMax = "256M";
 
-      # Schreibt ausschliesslich in sein Zustandsverzeichnis und die eine
-      # JSON-Datei im Webroot.
+      # Schreibt ausschliesslich in sein Zustandsverzeichnis - StateDirectory
+      # macht das automatisch beschreibbar, weitere ReadWritePaths braucht es
+      # nicht.
       ProtectSystem = "strict";
-      ReadWritePaths = [ "/var/www/${site.domain}/html" ];
     };
   };
 
   users.users.timemachine = {
     isSystemUser = true;
-    group = "nginx";
+    group = "timemachine";
     description = "timemachine GitHub-Poller";
   };
+  users.groups.timemachine = { };
 
   # --------------------------------------------------------------------------
   # nginx: /api/ weiterreichen
@@ -247,8 +258,21 @@ in
   # Port 8000 ist NICHT in der Firewall freigegeben. Der Dienst ist
   # ausschliesslich ueber nginx erreichbar.
   # --------------------------------------------------------------------------
-  services.nginx.virtualHosts.${site.domain}.locations."/api/" = {
-    proxyPass = "http://127.0.0.1:8000/";
-    proxyWebsockets = true;
+  services.nginx.virtualHosts.${site.domain}.locations = {
+    "/api/" = {
+      proxyPass = "http://127.0.0.1:8000/";
+      proxyWebsockets = true;
+    };
+
+    # Genau eine Datei aus dem Zustandsverzeichnis des Poller-Dienstes.
+    # "=" ist ein exakter Treffer - nichts anderes unterhalb von /var/lib
+    # wird dadurch erreichbar.
+    "= /timeline.json" = {
+      alias = timelinePath;
+      extraConfig = ''
+        add_header Cache-Control "public, max-age=300";
+        default_type application/json;
+      '';
+    };
   };
 }
