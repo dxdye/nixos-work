@@ -145,7 +145,21 @@
     rsync
     htop
     tmux
+    fastfetch
   ];
+
+  # Systemuebersicht bei jeder interaktiven Anmeldung.
+  #
+  # fastfetch statt neofetch: letzteres ist seit 2024 archiviert und nicht
+  # mehr gepflegt. fastfetch ist in C geschrieben statt als Bash-Skript und
+  # startet in Millisekunden - auf einem einzelnen Kern merkt man das.
+  #
+  # interactiveShellInit greift nur bei interaktiven Shells. `ssh versa
+  # 'befehl'` bleibt also unberuehrt, sonst wuerde die Ausgabe jedes
+  # Skript stoeren, das den Server per SSH abfragt.
+  programs.bash.interactiveShellInit = ''
+    ${pkgs.fastfetch}/bin/fastfetch
+  '';
 
   # ==========================================================================
   # Bewusst NICHT uebernommen
