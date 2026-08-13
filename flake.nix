@@ -10,16 +10,29 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Geheimnisse verschluesselt im Repo. Entschluesselt wird zur
+    # Aktivierungszeit mit dem SSH-Host-Key der Zielmaschine, direkt nach
+    # /run/agenix - auf tmpfs, nie auf der Platte, nie im /nix/store.
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, disko, ... }@inputs: {
+  outputs = { self, nixpkgs, disko, agenix, ... }@inputs: {
     nixosConfigurations.versa = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
         disko.nixosModules.disko
+        agenix.nixosModules.default
         ./hosts/versa
       ];
     };
+
+    # Damit `nix run .#agenix -- -e secrets/xyz.age` ohne separate
+    # Installation funktioniert.
+    packages.x86_64-linux.agenix = agenix.packages.x86_64-linux.default;
   };
 }

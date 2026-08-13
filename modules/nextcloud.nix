@@ -65,9 +65,8 @@
     config = {
       dbtype = "mysql";
       adminuser = "admin";
-      # Datei vorher anlegen:
-      #   echo -n 'PASSWORT' > /etc/nextcloud-admin-pass && chmod 600 ...
-      adminpassFile = "/etc/nextcloud-admin-pass";
+      # Kommt aus secrets/nextcloud-admin.age ueber agenix.
+      adminpassFile = config.age.secrets.nextcloud-admin.path;
     };
 
     # Legt MariaDB-Datenbank und -Benutzer an, Verbindung ueber Socket.

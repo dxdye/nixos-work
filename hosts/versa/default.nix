@@ -3,6 +3,7 @@
   imports = [
     ./disko.nix
     ./hardware.nix
+    ../../modules/secrets.nix
     ../../modules/base.nix
     ../../modules/web.nix
     ../../modules/nextcloud.nix

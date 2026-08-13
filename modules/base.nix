@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   # ==========================================================================
   # Schlank halten
@@ -62,43 +62,25 @@
     # ------------------------------------------------------------------
     # Konsolen-Passwort - gilt NUR fuer die Vultr-Webkonsole, nicht fuer SSH.
     #
-    # Hier steht bewusst KEIN Hash. Zwei Gruende:
-    #   1. Dieses Repo soll oeffentlich werden. Was einmal committet ist,
-    #      bleibt in der Git-Historie - auch wenn man es spaeter loescht.
-    #   2. Alles, was in einem Nix-Ausdruck steht, landet im /nix/store,
-    #      und der ist auf dem Zielsystem weltlesbar (0555). Ein inline
-    #      gesetztes hashedPassword waere dort im Aktivierungsskript
-    #      nachlesbar - anders als /etc/shadow mit 0600.
+    # In der Konfiguration steht der PFAD, nie der Hash. Ein inline gesetztes
+    # hashedPassword landete im /nix/store, und der ist auf dem Zielsystem
+    # weltlesbar (0555) - anders als /etc/shadow mit 0600. Ein Hash laesst
+    # sich offline mit einer Grafikkarte durchprobieren, ohne dass der Server
+    # etwas davon merkt.
     #
-    # Ist-Zustand: Das Passwort wurde nach der Installation per `passwd`
-    # direkt auf dem Server gesetzt. Es liegt damit nur in /etc/shadow (0600),
-    # nicht im Store und nicht im Repo. Weil users.mutableUsers auf true steht
-    # (Standard), ueberlebt es jeden nixos-rebuild.
+    # Der Inhalt kommt aus secrets/root-password.age. agenix entschluesselt
+    # ihn beim Start mit dem SSH-Host-Key nach /run/agenix/root-password:
+    # tmpfs, 0400, nie auf der Platte.
     #
-    # Nachteil: nicht reproduzierbar - beim Neuaufsetzen muss es von Hand
-    # gesetzt werden. Falls doch einmal ein Hash mitgegeben werden muss,
-    # etwa weil die Maschine ohne funktionierendes SSH hochkommt:
-    #   1. mkpasswd -m sha-512
-    #   2. Zeile unten einkommentieren, Hash eintragen
-    #   3. NICHT committen. `nix build` beruecksichtigt Aenderungen an
-    #      bereits verfolgten Dateien auch ohne Commit ("Git tree is dirty").
-    #   4. Nach dem Deploy:  git checkout modules/base.nix
+    # Aendern:
+    #   openssl passwd -6 | tr -d '\n' > /tmp/h
+    #   nix run .#agenix -- -e secrets/root-password.age   # Inhalt einfuegen
+    #   nixos-rebuild switch ...
     #
-    # Langfristig agenix oder sops-nix - dann liegt das Geheimnis
-    # verschluesselt im Repo und nur der Zielhost kann es entschluesseln.
+    # `passwd` auf dem Server wirkt wegen mutableUsers = false nur bis zum
+    # naechsten Deploy.
     # ------------------------------------------------------------------
-    # Im Repo steht der PFAD, nicht der Inhalt. Die Datei enthaelt genau eine
-    # Zeile - den sha-512-crypt-Hash - und liegt mit 0600 auf dem Server.
-    #
-    # Anlegen (einmalig, aus dem bestehenden /etc/shadow uebernommen):
-    #   awk -F: '$1=="root"{print $2}' /etc/shadow > /etc/secrets/root-password
-    #   chmod 600 /etc/secrets/root-password
-    # Oder neu erzeugen:  mkpasswd -m sha-512 > /etc/secrets/root-password
-    #
-    # Achtung: Ab jetzt verwaltet NixOS das Passwort. Ein spaeteres `passwd`
-    # wird beim naechsten nixos-rebuild wieder ueberschrieben - Aenderungen
-    # gehoeren in diese Datei.
-    hashedPasswordFile = "/etc/secrets/root-password";
+    hashedPasswordFile = config.age.secrets.root-password.path;
 
     # Public Keys sind keine Geheimnisse - die duerfen ins Repo.
     #
