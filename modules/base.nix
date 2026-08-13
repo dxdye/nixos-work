@@ -50,15 +50,19 @@
     #      gesetztes hashedPassword waere dort im Aktivierungsskript
     #      nachlesbar - anders als /etc/shadow mit 0600.
     #
-    # Bootstrap fuer nixos-infect (einmalig):
+    # Ist-Zustand: Das Passwort wurde nach der Installation per `passwd`
+    # direkt auf dem Server gesetzt. Es liegt damit nur in /etc/shadow (0600),
+    # nicht im Store und nicht im Repo. Weil users.mutableUsers auf true steht
+    # (Standard), ueberlebt es jeden nixos-rebuild.
+    #
+    # Nachteil: nicht reproduzierbar - beim Neuaufsetzen muss es von Hand
+    # gesetzt werden. Falls doch einmal ein Hash mitgegeben werden muss,
+    # etwa weil die Maschine ohne funktionierendes SSH hochkommt:
     #   1. mkpasswd -m sha-512
     #   2. Zeile unten einkommentieren, Hash eintragen
     #   3. NICHT committen. `nix build` beruecksichtigt Aenderungen an
     #      bereits verfolgten Dateien auch ohne Commit ("Git tree is dirty").
     #   4. Nach dem Deploy:  git checkout modules/base.nix
-    #
-    # Zielzustand, sobald das System einmal laeuft: nur der PFAD wandert
-    # in den Store, nicht der Inhalt. Datei auf dem Server mit 0600 anlegen.
     #
     # Langfristig agenix oder sops-nix - dann liegt das Geheimnis
     # verschluesselt im Repo und nur der Zielhost kann es entschluesseln.
@@ -67,8 +71,14 @@
     # hashedPasswordFile = "/etc/secrets/root-password";  # Zielzustand
 
     # Public Keys sind keine Geheimnisse - die duerfen ins Repo.
+    #
+    # Ein Schluessel pro Host: geht einer verloren, sperrt man gezielt einen
+    # Zugang statt aller. Der erste Eintrag stammt noch aus der Zeit, als
+    # dieser Host fillya hiess - er bleibt drin, bis der versa-Schluessel
+    # nachweislich funktioniert, danach kann er raus.
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICocR5ZZJa9BHdswECjWCA7B6khE7i+/J13jBsxMIhuC tw@fedora -> fillya"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIiNZ5YB4eSShUPYmrxZZhSdRSC0ZvkludjxZiMgivD4 tw@fedora -> versa"
     ];
   };
 
