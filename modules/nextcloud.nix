@@ -19,24 +19,25 @@
   services.nextcloud = {
     enable = true;
 
-    # VORUEBERGEHEND 32, nicht 33.
+    # Weg hierher, zur Nachvollziehbarkeit:
     #
     # Der alte Server lief auf Nextcloud 30. Nextcloud verbietet das
     # Ueberspringen von Hauptversionen, und nixpkgs 26.05 hat kein
-    # nextcloud31 - die Kette 30->31->32->33 liesse sich hier also nicht
+    # nextcloud31 - die Kette 30->31->32->33 liess sich hier also nicht
     # nachbauen. Deshalb wurde auf dem alten Server per offiziellem Updater
-    # auf 32 hochgezogen (30.0.5 -> 30.0.17 -> 31.0.14 -> 32.x, PHP 8.2
-    # deckt alle drei ab).
+    # auf 32 hochgezogen (30.0.5 -> 30.0.17 -> 31.0.14 -> 32.0.13; PHP 8.2
+    # deckt alle drei ab). Diese Instanz lief dann ebenfalls auf 32, damit
+    # die uebernommene Datenbank passte - Nextcloud verweigert den Start,
+    # wenn der Code aelter ist als die Datenbank, auch auf Patch-Ebene.
     #
-    # Damit die Datenbank uebernommen werden kann, muss diese Instanz
-    # dieselbe Version fahren. NACH erfolgreicher Uebernahme auf
-    # pkgs.nextcloud33 stellen - das ist dann ein einzelner, unterstuetzter
-    # Schritt, den occ upgrade beim naechsten Deploy selbst erledigt.
+    # Erst nach der erfolgreichen Uebernahme dieser letzte Schritt auf 33:
+    # eine Hauptversion, also unterstuetzt, und nextcloud-setup fuehrt
+    # occ upgrade beim Deploy selbst aus.
     #
     # Version gezielt pruefen, NICHT per `nix search nixpkgs nextcloud`:
     # das evaluiert den kompletten Baum und braucht mehrere GB RAM.
-    #   nix eval --raw nixpkgs#nextcloud32.version
-    package = pkgs.nextcloud32;
+    #   nix eval --raw nixpkgs#nextcloud33.version
+    package = pkgs.nextcloud33;
 
     hostName = "owncloud.tilmanbertram.com"; # DNS-Name bleibt, kein DNS-Umzug
     https = true;
