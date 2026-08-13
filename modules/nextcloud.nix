@@ -86,10 +86,23 @@
     };
     extraAppsEnable = true;
 
-    # App-Store trotzdem offen lassen: richdocuments und quota_warning gibt es
-    # in nixpkgs nicht als Ableitung, die werden nach dem Umzug per Oberflaeche
-    # nachinstalliert (sie landen dann unter /var/lib/nextcloud/store-apps).
-    appstoreEnable = true;
+    # App-Store AUS. Beides zusammen geht nicht:
+    #
+    # Mit appstoreEnable = true sieht Nextcloud im Store eine neuere Version
+    # einer per extraApps installierten App, will sie aktualisieren, kann den
+    # nixpkgs-Pfad aber nicht ueberschreiben (/nix/store ist read-only) und
+    # legt eine zweite Kopie unter /var/lib/nextcloud/store-apps ab. Ergebnis:
+    #   PHP Fatal error: Cannot redeclare class ComposerAutoloaderInitCalendar
+    #
+    # Damit ist der App-Bestand jetzt vollstaendig deklariert: Was hier nicht
+    # steht, existiert auf dem Server nicht. Das ist der Zustand, den wir
+    # wollten - nur eben mit der Konsequenz, dass Nachinstallieren per
+    # Weboberflaeche nicht mehr geht, sondern hier eingetragen werden muss.
+    #
+    # Verzicht dadurch: richdocuments (Collabora-Anbindung - braucht ohnehin
+    # einen Collabora-Server, den es hier nicht gibt) und quota_warning.
+    # Beide wurden beim Upgrade automatisch als inkompatibel deaktiviert.
+    appstoreEnable = false;
 
     settings = {
       trusted_domains = [ "owncloud.tilmanbertram.com" ];
