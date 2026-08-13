@@ -20,8 +20,13 @@
   # --------------------------------------------------------------------------
   boot.loader.grub = {
     enable = true;
-    device = "/dev/vda";
     configurationLimit = 5; # nur 5 Generationen im Bootmenue -> spart Platz
+
+    # KEIN `device = "/dev/vda"` hier!
+    # disko traegt das Geraet selbst in boot.loader.grub.devices ein, sobald es
+    # die EF02-Partition sieht. Beides zusammen ergibt denselben Eintrag zweimal
+    # und die Auswertung bricht ab mit:
+    #   "You cannot have duplicated devices in mirroredBoots"
   };
 
   boot.initrd.availableKernelModules = [
