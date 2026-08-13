@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   # ==========================================================================
   # Nextcloud statt ownCloud
@@ -68,6 +68,28 @@
     # MariaDB bleibt bewusst auf der lokalen Platte: klein (12,4 MB Nutzdaten)
     # und latenzempfindlich - Block Storage ist netzwerkangebunden.
     database.createLocally = true;
+
+    # ------------------------------------------------------------------
+    # Apps aus dem App-Store, die auf dem alten Server aktiv waren.
+    # Alles andere in `occ app:list` ist im Nextcloud-Server enthalten und
+    # kommt automatisch mit.
+    #
+    # Die INHALTE dieser Apps (Termine, Kontakte, Mailkonten) liegen in der
+    # Datenbank und werden ohnehin uebernommen. Fehlt nur der Programmcode,
+    # deaktiviert Nextcloud die App - die Daten bleiben, sind aber unsichtbar.
+    #
+    # Deklarativ statt per Klick: so sind sie nach einem Neuaufsetzen sofort
+    # wieder da und die Versionen sind an nixpkgs gebunden.
+    # ------------------------------------------------------------------
+    extraApps = with config.services.nextcloud.package.packages.apps; {
+      inherit calendar contacts mail notes;
+    };
+    extraAppsEnable = true;
+
+    # App-Store trotzdem offen lassen: richdocuments und quota_warning gibt es
+    # in nixpkgs nicht als Ableitung, die werden nach dem Umzug per Oberflaeche
+    # nachinstalliert (sie landen dann unter /var/lib/nextcloud/store-apps).
+    appstoreEnable = true;
 
     settings = {
       trusted_domains = [ "owncloud.tilmanbertram.com" ];
