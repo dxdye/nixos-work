@@ -33,6 +33,13 @@
   # 1 GB RAM, 1 Kern: Swap als Sicherheitsnetz, nicht als RAM-Ersatz.
   boot.kernel.sysctl."vm.swappiness" = 10;
 
+  # Ablage fuer Zustandswerte, die nicht ins Repo gehoeren: Passwort-Hashes,
+  # spaeter .env-Dateien fuer Dienste. Nur die PFADE stehen in der
+  # Konfiguration, die Inhalte liegen ausschliesslich hier.
+  systemd.tmpfiles.rules = [
+    "d /etc/secrets 0700 root root - -"
+  ];
+
   # ==========================================================================
   # Zugang
   # Stand vorher: PermitRootLogin yes + PasswordAuthentication yes,
@@ -67,8 +74,18 @@
     # Langfristig agenix oder sops-nix - dann liegt das Geheimnis
     # verschluesselt im Repo und nur der Zielhost kann es entschluesseln.
     # ------------------------------------------------------------------
-    # hashedPassword     = "$6$...";                      # nur Bootstrap, nie committen
-    # hashedPasswordFile = "/etc/secrets/root-password";  # Zielzustand
+    # Im Repo steht der PFAD, nicht der Inhalt. Die Datei enthaelt genau eine
+    # Zeile - den sha-512-crypt-Hash - und liegt mit 0600 auf dem Server.
+    #
+    # Anlegen (einmalig, aus dem bestehenden /etc/shadow uebernommen):
+    #   awk -F: '$1=="root"{print $2}' /etc/shadow > /etc/secrets/root-password
+    #   chmod 600 /etc/secrets/root-password
+    # Oder neu erzeugen:  mkpasswd -m sha-512 > /etc/secrets/root-password
+    #
+    # Achtung: Ab jetzt verwaltet NixOS das Passwort. Ein spaeteres `passwd`
+    # wird beim naechsten nixos-rebuild wieder ueberschrieben - Aenderungen
+    # gehoeren in diese Datei.
+    hashedPasswordFile = "/etc/secrets/root-password";
 
     # Public Keys sind keine Geheimnisse - die duerfen ins Repo.
     #

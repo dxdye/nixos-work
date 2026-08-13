@@ -1,4 +1,4 @@
-{ ... }:
+{ site, ... }:
 {
   # ==========================================================================
   # Phase 6 - noch nicht aktiv (in hosts/versa/default.nix auskommentiert)
@@ -34,7 +34,7 @@
 
   # Die JSON-Datei, die der Elixir-Dienst schreibt, liefert nginx statisch aus:
   #
-  # services.nginx.virtualHosts."tilmanbertram.com".locations."/data.json" = {
+  # services.nginx.virtualHosts.${site.domain}.locations."/data.json" = {
   #   alias = "/mnt/data/public/data.json";
   #   extraConfig = ''
   #     add_header Cache-Control "no-cache";

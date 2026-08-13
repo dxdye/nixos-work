@@ -60,13 +60,9 @@
   # einer statischen Adresse waere nach der Installation nicht mehr korrigierbar,
   # ohne ueber die Webkonsole zu gehen.
   #
-  # Ist-Werte dieser Instanz (Amsterdam), abgelesen im Installer:
-  #   ens3   95.179.148.48/23           Gateway 95.179.148.1
-  #          2a05:f480:1400:393b:.../64 (SLAAC + Privacy Extension)
-  #
-  # Zur Referenz, die alte Paris-Instanz:
-  #   ens3   104.238.190.14/23          Gateway 104.238.190.1
-  #          2001:19f0:6801:36:5400:3ff:fe27:393e/64
+  # Adressen bewusst nicht dokumentiert - sie kommen ohnehin per DHCP und
+  # gehoeren nicht in ein oeffentliches Repo. Ablesen auf der Maschine mit:
+  #   ip -br a ; ip route | grep default
   # --------------------------------------------------------------------------
   networking = {
     useDHCP = false;

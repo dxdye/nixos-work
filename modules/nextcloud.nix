@@ -1,20 +1,25 @@
-{ config, pkgs, ... }:
+{ config, pkgs, site, ... }:
 {
   # ==========================================================================
-  # Nextcloud statt ownCloud
+  # Nextcloud - vollstaendig vom alten Server uebernommen.
   #
-  # Entscheidung: nur die DATEIEN uebernehmen, nicht die Datenbank.
-  # Grund: Der offizielle Weg ownCloud -> Nextcloud verlangt einen
-  # Zwischenschritt ueber Nextcloud 25 - eine Version, die in nixpkgs 26.05
-  # nicht mehr existiert. Diese Kette waere hier nicht sauber nachbaubar.
+  # Der Hostname trug historisch "owncloud", die Software war aber bereits
+  # Nextcloud. Deshalb konnte die Datenbank mitwandern statt nur die Dateien:
+  # Freigaben, oeffentliche Links, Dateiversionen, Papierkorb und die
+  # Benutzerkonten samt Passwoertern sind erhalten.
   #
-  # Verloren gehen: Freigaben, oeffentliche Links, Dateiversionen, Papierkorb.
-  # Erhalten bleiben: alle Dateien (3,9 GB).
+  # Dafuer noetig war Versionsgleichstand zwischen alter und neuer Instanz
+  # (siehe package unten) und die Uebernahme von drei Werten aus der alten
+  # config.php in die neue:
   #
-  # Ablauf nach dem ersten Deploy:
-  #   1. Dateien nach /mnt/data/nextcloud/<user>/files/ legen
-  #   2. chown -R nextcloud:nextcloud /mnt/data/nextcloud
-  #   3. nextcloud-occ files:scan --all
+  #   instanceid     benennt das appdata-Verzeichnis
+  #   secret         entschluesselt gespeicherte Zugangsdaten
+  #   passwordsalt   geht in die Passwortpruefung ein - stimmt er nicht,
+  #                  kann sich niemand mehr anmelden
+  #
+  # Diese Werte stehen in /var/lib/nextcloud/config/config.php und gehoeren
+  # NICHT ins Repo. Verifiziert wurde die Uebernahme mit einer WebDAV-Anfrage
+  # gegen localhost - HTTP 207 statt 401 beweist, dass passwordsalt passt.
   # ==========================================================================
   services.nextcloud = {
     enable = true;
@@ -39,7 +44,7 @@
     #   nix eval --raw nixpkgs#nextcloud33.version
     package = pkgs.nextcloud33;
 
-    hostName = "owncloud.tilmanbertram.com"; # DNS-Name bleibt, kein DNS-Umzug
+    hostName = site.nextcloudHost; # Name bleibt, damit kein DNS-Umzug noetig ist
     https = true;
 
     # KEIN explizites datadir - der Standard ist services.nextcloud.home,
@@ -106,12 +111,12 @@
     appstoreEnable = false;
 
     settings = {
-      trusted_domains = [ "owncloud.tilmanbertram.com" ];
+      trusted_domains = [ site.nextcloudHost ];
       default_phone_region = "DE";
     };
   };
 
-  services.nginx.virtualHosts."owncloud.tilmanbertram.com" = {
+  services.nginx.virtualHosts.${site.nextcloudHost} = {
     forceSSL = true;
     enableACME = true;
   };
