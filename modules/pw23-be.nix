@@ -52,6 +52,24 @@ let
 
     env.EXQLITE_FORCE_BUILD = "true";
   };
+
+  # Migrationen vor dem Start ausfuehren.
+  #
+  # In der Entwicklung erledigt das `mix ecto.migrate`. Ein Release enthaelt
+  # aber keine Mix-Tasks - ohne diesen Schritt startet der Dienst gegen eine
+  # leere Datenbank und stirbt mit:
+  #   ** (Exqlite.Error) no such table: http_cache
+  #
+  # Der uebliche Weg waere ein Timemachine.Release-Modul im Projekt. Solange
+  # es das nicht gibt, ruft `eval` den Migrator direkt auf - die Migrationen
+  # liegen unter priv/repo/migrations und sind im Release enthalten.
+  #
+  # `with_repo` startet das Repo, fuehrt die Funktion aus und faehrt es wieder
+  # herunter. Idempotent: bereits angewandte Migrationen werden uebersprungen.
+  migrate = pkgs.writeShellScript "timemachine-migrate" ''
+    exec ${timemachine}/bin/timemachine eval \
+      'Ecto.Migrator.with_repo(Timemachine.Repo, &Ecto.Migrator.run(&1, :up, all: true))'
+  '';
 in
 {
   # ==========================================================================
@@ -195,6 +213,7 @@ in
       StateDirectory = "timemachine";
       UMask = "0022"; # nginx muss die timeline.json lesen koennen
 
+      ExecStartPre = migrate;
       ExecStart = "${timemachine}/bin/timemachine start";
       ExecStop = "${timemachine}/bin/timemachine stop";
 
