@@ -36,6 +36,6 @@
   # GitHub-Konten, die pw23-BE zwischenspeichert und timemachine pollt.
   githubAccounts = [ "dxdye" "d2tsb" ];
 
-  # GITHUB_EMAILS steht nicht hier, sondern in secrets/timemachine.env.age -
-  # verschluesselt, per EnvironmentFile eingelesen.
+  # GITHUB_EMAILS steht nicht hier, sondern in /etc/secrets/timemachine.env
+  # auf dem Server - personenbezogen, und dieses Repo wird veroeffentlicht.
 }

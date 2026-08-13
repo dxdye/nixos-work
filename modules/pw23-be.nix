@@ -105,8 +105,8 @@ in
   #
   # Ohne Token gibt es hier nichts, was zwingend geheim waere - Kontonamen und
   # Commit-Mails stehen ohnehin in jeder Commit-Historie. Die Kontonamen stehen
-  # deshalb offen in site.nix; die Commit-Mails liegen in einer verschluesselten
-  # .env, weil sie personenbezogen sind und das Repo veroeffentlicht werden soll.
+  # deshalb offen in site.nix; die Commit-Mails liegen in einer .env auf dem
+  # Server, weil sie personenbezogen sind und das Repo veroeffentlicht wird.
   # ==========================================================================
 
   # --------------------------------------------------------------------------
@@ -190,8 +190,8 @@ in
       GITHUB_ACCOUNTS = lib.concatStringsSep "," site.githubAccounts;
       START_POLLER = "true";
 
-      # GITHUB_EMAILS steht bewusst NICHT hier, sondern in der
-      # verschluesselten .env - siehe EnvironmentFile weiter unten.
+      # GITHUB_EMAILS steht bewusst NICHT hier, sondern in
+      # /etc/secrets/timemachine.env - siehe EnvironmentFile weiter unten.
 
       # Elixir-Releases lesen beim Start einen "Cookie" aus
       # releases/COOKIE - das gemeinsame Geheimnis fuer die Erlang-Verteilung
@@ -226,10 +226,23 @@ in
       StateDirectoryMode = "0755"; # nginx muss hinein
       UMask = "0022";              # timeline.json wird 0644
 
-      # Laufzeitwerte aus der von agenix entschluesselten .env. systemd liest
-      # sie NACH `environment`, dort gesetzte Schluessel wuerden also
-      # ueberschrieben - deshalb steht GITHUB_EMAILS nur an einer Stelle.
-      EnvironmentFile = config.age.secrets.timemachine-env.path;
+      # Laufzeitwerte aus einer .env auf dem Server. Anlegen mit:
+      #   printf 'GITHUB_EMAILS=a@b.de,c@d.de\n' > /etc/secrets/timemachine.env
+      #   chmod 600 /etc/secrets/timemachine.env
+      #
+      # Das fuehrende "-" macht die Datei optional: Fehlt sie, startet der
+      # Dienst trotzdem - nur ohne die Adressen, also mit unvollstaendiger
+      # Zuordnung. Ohne das Minus wuerde eine frische Installation hart
+      # scheitern, bevor man die Datei ueberhaupt anlegen kann.
+      #
+      # systemd liest EnvironmentFile NACH `environment`. Dort gesetzte
+      # Schluessel wuerden also ueberschrieben - deshalb steht GITHUB_EMAILS
+      # nur an dieser einen Stelle.
+      #
+      # Nicht reproduzierbar: bei einem Neuaufsetzen muss die Datei von Hand
+      # angelegt oder per nixos-anywhere --extra-files mitgegeben werden.
+      # Der reproduzierbare Weg waere agenix, wie bei root-password.
+      EnvironmentFile = "-/etc/secrets/timemachine.env";
 
       ExecStartPre = migrate;
       ExecStart = "${timemachine}/bin/timemachine start";
