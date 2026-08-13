@@ -16,6 +16,23 @@
   # Siehe site.nix, insbesondere den skip-worktree-Hinweis.
   _module.args.site = import ./site.nix;
 
+  # Sicherheitskopfzeilen fuer alles, was diese Maschine selbst ausliefert.
+  #
+  # Warum geteiltes Argument und nicht einmal im vhost: nginx vererbt
+  # add_header NICHT in einen location-Block, der ein eigenes add_header
+  # setzt - dort fallen dann ALLE geerbten weg, nicht nur das gleichnamige.
+  # Betroffen ist die timeline.json-Location in modules/pw23-be.nix, die
+  # Cache-Control setzt. Sie muss den Block deshalb wiederholen.
+  #
+  # Nextcloud bekommt ihn bewusst NICHT: die Anwendung setzt eigene Kopfzeilen
+  # inklusive CSP, und doppelte X-Frame-Options ignorieren manche Browser ganz.
+  _module.args.securityHeaders = ''
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "no-referrer" always;
+  '';
+
   networking.hostName = "versa";
 
   # Nicht aendern nach der Erstinstallation - legt fest, gegen welche

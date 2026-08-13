@@ -1,4 +1,4 @@
-{ config, pkgs, lib, inputs, site, ... }:
+{ config, pkgs, lib, inputs, site, securityHeaders, ... }:
 
 let
   src = inputs.pw23-be;
@@ -151,7 +151,23 @@ in
       # und Schreiben ausschliesslich im Zustandsverzeichnis.
       ExecStart = lib.concatStringsSep " " [
         "${pkgs.deno}/bin/deno run"
-        "--allow-net"
+
+        # Nur GitHub nach aussen, plus der eigene Lauschsocket.
+        #
+        # app.ts prueft Kontonamen gegen eine Allowlist, bevor sie in eine
+        # ausgehende URL wandern. Diese Zeile ist die zweite Verteidigungslinie:
+        # faellt die Pruefung bei einem Refactoring weg, kann der Dienst
+        # trotzdem nichts anderes erreichen - insbesondere nicht den
+        # Metadatendienst auf 169.254.169.254.
+        #
+        # 0.0.0.0:8000, nicht 127.0.0.1:8000: main.ts ruft app.listen(port)
+        # ohne Hostnamen auf, Deno bindet damit auf alle Interfaces. Von aussen
+        # erreichbar ist der Port dennoch nicht - die Firewall gibt nur
+        # 22/80/443 frei, und nginx spricht den Dienst ueber 127.0.0.1 an.
+        #
+        # Paginierung baut ihre URLs selbst zusammen und folgt keinen
+        # Link-Kopfzeilen, es bleibt also bei diesem einen Ziel.
+        "--allow-net=api.github.com,0.0.0.0:8000"
         "--allow-env"
         "--allow-read=${src},${denoState}"
         "--allow-write=${denoState}"
@@ -299,6 +315,7 @@ in
     "= /timeline.json" = {
       alias = timelinePath;
       extraConfig = ''
+        ${securityHeaders}
         add_header Cache-Control "public, max-age=300";
         default_type application/json;
       '';

@@ -1,4 +1,4 @@
-{ site, ... }:
+{ site, securityHeaders, ... }:
 let
   webroot = "/var/www/${site.domain}/html";
 in
@@ -47,6 +47,12 @@ in
         enableACME = true;
         serverAliases = [ "www.${site.domain}" ];
         root = webroot;
+
+        # Gilt auch fuer /api/, weil diese Location kein eigenes add_header
+        # setzt und den Block deshalb erbt. Fuer JSON-Antworten ist vor allem
+        # nosniff relevant: ein Browser, der JSON als HTML interpretiert, ist
+        # der klassische Weg zu XSS.
+        extraConfig = securityHeaders;
       };
 
       # Auffang fuer alles, was auf keinen der deklarierten Namen passt.
