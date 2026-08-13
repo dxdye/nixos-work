@@ -19,9 +19,11 @@
   services.nextcloud = {
     enable = true;
 
-    # Verfuegbare Version pruefen:  nix search nixpkgs nextcloud
-    # In nixpkgs liegen meist mehrere parallel (nextcloud30/31/...).
-    package = pkgs.nextcloud31;
+    # In nixpkgs 26.05 verfuegbar ist nextcloud32 - nextcloud31 gibt es nicht.
+    # Version gezielt pruefen, NICHT per `nix search nixpkgs nextcloud`:
+    # das evaluiert den kompletten Baum und braucht mehrere GB RAM.
+    #   nix eval --raw nixpkgs#nextcloud32.version
+    package = pkgs.nextcloud32;
 
     hostName = "owncloud.tilmanbertram.com"; # DNS-Name bleibt, kein DNS-Umzug
     https = true;

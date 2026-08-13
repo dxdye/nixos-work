@@ -28,15 +28,36 @@
   # dazu 488.713 Fehlversuche in sechs Wochen. Das ist hier strukturell zu.
   # ==========================================================================
   users.users.root = {
-    # Erzeugen mit:  mkpasswd -m sha-512
-    # Gilt NUR fuer die Vultr-Webkonsole, nicht fuer SSH.
-    # Ohne diesen Hash laesst nixos-infect root ohne Passwort zurueck -
-    # dann waere die Konsole als Rueckfalllinie wertlos.
-    hashedPassword = "$6$PLATZHALTER_PASSWORT_HASH";
+    # ------------------------------------------------------------------
+    # Konsolen-Passwort - gilt NUR fuer die Vultr-Webkonsole, nicht fuer SSH.
+    #
+    # Hier steht bewusst KEIN Hash. Zwei Gruende:
+    #   1. Dieses Repo soll oeffentlich werden. Was einmal committet ist,
+    #      bleibt in der Git-Historie - auch wenn man es spaeter loescht.
+    #   2. Alles, was in einem Nix-Ausdruck steht, landet im /nix/store,
+    #      und der ist auf dem Zielsystem weltlesbar (0555). Ein inline
+    #      gesetztes hashedPassword waere dort im Aktivierungsskript
+    #      nachlesbar - anders als /etc/shadow mit 0600.
+    #
+    # Bootstrap fuer nixos-infect (einmalig):
+    #   1. mkpasswd -m sha-512
+    #   2. Zeile unten einkommentieren, Hash eintragen
+    #   3. NICHT committen. `nix build` beruecksichtigt Aenderungen an
+    #      bereits verfolgten Dateien auch ohne Commit ("Git tree is dirty").
+    #   4. Nach dem Deploy:  git checkout modules/base.nix
+    #
+    # Zielzustand, sobald das System einmal laeuft: nur der PFAD wandert
+    # in den Store, nicht der Inhalt. Datei auf dem Server mit 0600 anlegen.
+    #
+    # Langfristig agenix oder sops-nix - dann liegt das Geheimnis
+    # verschluesselt im Repo und nur der Zielhost kann es entschluesseln.
+    # ------------------------------------------------------------------
+    # hashedPassword     = "$6$...";                      # nur Bootstrap, nie committen
+    # hashedPasswordFile = "/etc/secrets/root-password";  # Zielzustand
 
-    # Inhalt von ~/.ssh/id_ed25519_fillya.pub
+    # Public Keys sind keine Geheimnisse - die duerfen ins Repo.
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAA_PLATZHALTER_PUBLIC_KEY tw@fedora -> fillya"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICocR5ZZJa9BHdswECjWCA7B6khE7i+/J13jBsxMIhuC tw@fedora -> fillya"
     ];
   };
 
