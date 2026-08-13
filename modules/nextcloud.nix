@@ -35,18 +35,20 @@
     hostName = "owncloud.tilmanbertram.com"; # DNS-Name bleibt, kein DNS-Umzug
     https = true;
 
-    # Nutzdaten auf der lokalen Platte.
+    # KEIN explizites datadir - der Standard ist services.nextcloud.home,
+    # also /var/lib/nextcloud.
     #
-    # Urspruenglich war /mnt/data auf einem Vultr Block Storage geplant -
-    # saubere Trennung Daten/System. Die Region Paris (cdg) bietet aber kein
-    # Block Storage an. Und seit klar ist, dass nixos-infect via NIXOS_LUSTRATE
-    # nur nach /old-root VERSCHIEBT statt zu loeschen, war das Volume ohnehin
-    # nicht mehr noetig, um die Daten ueber den Umzug zu retten.
+    # Urspruenglich stand hier /mnt/data auf einem Block-Storage-Volume, fuer
+    # eine saubere Trennung Daten/System. Das Volume entfiel (die Region bietet
+    # keins), und der zurueckgebliebene Pfad /var/lib/nextcloud/data war dann
+    # ein Datenverzeichnis INNERHALB des Home-Verzeichnisses. In dieser
+    # Verschachtelung verweigert systemd-tmpfiles den Besitzerwechsel
+    # ("unsafe path transition"), und nextcloud-setup bricht ab mit:
+    #   /var/lib/nextcloud/data/config is not owned by user 'nextcloud'!
     #
-    # Bei 24 GB Platte und 3,9 GB Daten ist Platz kein Problem.
-    # Falls spaeter doch ein Volume dazukommt: hier auf /mnt/data/nextcloud
-    # umstellen, in hardware.nix einhaengen, einmal rsync, rebuild.
-    datadir = "/var/lib/nextcloud/data";
+    # Bei 23 GB Platte und 3,9 GB Daten ist Platz kein Thema.
+    # Falls spaeter doch ein Volume dazukommt: datadir auf einen Pfad AUSSERHALB
+    # von home setzen, z.B. /mnt/data/nextcloud.
 
     config = {
       dbtype = "mysql";
