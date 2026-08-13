@@ -19,18 +19,34 @@
   services.nextcloud = {
     enable = true;
 
-    # In nixpkgs 26.05 verfuegbar ist nextcloud32 - nextcloud31 gibt es nicht.
+    # nixpkgs 26.05 bringt nextcloud32 und nextcloud33 (nextcloud31 nicht mehr).
+    #
+    # Hier bewusst die NEUESTE Version: Nextcloud verbietet zwar das
+    # Ueberspringen von Major-Versionen beim Upgrade - das gilt aber nur fuer
+    # bestehende Installationen. Wir installieren neu (nur Dateien werden
+    # uebernommen, nicht die Datenbank), also gibt es keine Kette einzuhalten.
+    # Mit 32 zu starten hiesse nur, spaeter noch einmal auf 33 zu migrieren.
+    #
     # Version gezielt pruefen, NICHT per `nix search nixpkgs nextcloud`:
     # das evaluiert den kompletten Baum und braucht mehrere GB RAM.
-    #   nix eval --raw nixpkgs#nextcloud32.version
-    package = pkgs.nextcloud32;
+    #   nix eval --raw nixpkgs#nextcloud33.version
+    package = pkgs.nextcloud33;
 
     hostName = "owncloud.tilmanbertram.com"; # DNS-Name bleibt, kein DNS-Umzug
     https = true;
 
-    # Nutzdaten auf dem Block Storage - getrennt vom System.
-    # Setzt voraus, dass /mnt/data in hardware.nix eingehaengt ist.
-    datadir = "/mnt/data/nextcloud";
+    # Nutzdaten auf der lokalen Platte.
+    #
+    # Urspruenglich war /mnt/data auf einem Vultr Block Storage geplant -
+    # saubere Trennung Daten/System. Die Region Paris (cdg) bietet aber kein
+    # Block Storage an. Und seit klar ist, dass nixos-infect via NIXOS_LUSTRATE
+    # nur nach /old-root VERSCHIEBT statt zu loeschen, war das Volume ohnehin
+    # nicht mehr noetig, um die Daten ueber den Umzug zu retten.
+    #
+    # Bei 24 GB Platte und 3,9 GB Daten ist Platz kein Problem.
+    # Falls spaeter doch ein Volume dazukommt: hier auf /mnt/data/nextcloud
+    # umstellen, in hardware.nix einhaengen, einmal rsync, rebuild.
+    datadir = "/var/lib/nextcloud/data";
 
     config = {
       dbtype = "mysql";

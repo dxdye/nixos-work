@@ -1,6 +1,7 @@
 { ... }:
 {
   imports = [
+    ./disko.nix
     ./hardware.nix
     ../../modules/base.nix
     ../../modules/web.nix

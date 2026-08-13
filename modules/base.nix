@@ -6,6 +6,17 @@
   # waechst nicht unkontrolliert, solange GC und Store-Optimierung laufen.
   # ==========================================================================
   documentation.nixos.enable = false;
+
+  # Info-Seiten abschalten. Zwei Gruende:
+  #   1. Auf einem Server braucht sie niemand - spart Platz im Store.
+  #   2. documentation.info verlinkt /share/info und laesst install-info einen
+  #      Index bauen. Das scheitert in dieser nixpkgs-Revision, weil gzip in
+  #      der Build-Umgebung fehlt ("No such file or directory for gzip -d",
+  #      ausgeloest von gawknotes.info aus gawk).
+  # man-Seiten bleiben aktiv.
+  documentation.info.enable = false;
+  documentation.doc.enable = false;
+
   programs.command-not-found.enable = false;
 
   nix.settings = {
