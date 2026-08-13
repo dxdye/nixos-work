@@ -45,6 +45,19 @@
   # Stand vorher: PermitRootLogin yes + PasswordAuthentication yes,
   # dazu 488.713 Fehlversuche in sechs Wochen. Das ist hier strukturell zu.
   # ==========================================================================
+  # Benutzer werden ausschliesslich hier deklariert, nicht auf dem Server.
+  #
+  # Muss false sein, damit hashedPasswordFile ueberhaupt wirkt: Mit dem
+  # Standardwert true setzt NixOS das Passwort nur beim ERSTMALIGEN Anlegen
+  # des Benutzers und laesst es danach in Ruhe, damit `passwd` Bestand hat.
+  # Bei einem bereits existierenden root wird die Datei dann schlicht
+  # ignoriert - `passwd -S root` meldet weiterhin "L".
+  #
+  # Konsequenz: `passwd` auf dem Server wirkt nur bis zum naechsten
+  # nixos-rebuild. Passwort aendern heisst ab jetzt: neuen Hash in
+  # /etc/secrets/root-password schreiben und deployen.
+  users.mutableUsers = false;
+
   users.users.root = {
     # ------------------------------------------------------------------
     # Konsolen-Passwort - gilt NUR fuer die Vultr-Webkonsole, nicht fuer SSH.
