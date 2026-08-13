@@ -163,7 +163,23 @@ in
       GITHUB_ACCOUNTS = lib.concatStringsSep "," site.githubAccounts;
       GITHUB_EMAILS = lib.concatStringsSep "," site.githubEmails;
       START_POLLER = "true";
-      RELEASE_COOKIE_FILE = "/dev/null"; # kein Clustering, kein Node-Name noetig
+
+      # Elixir-Releases lesen beim Start einen "Cookie" aus
+      # releases/COOKIE - das gemeinsame Geheimnis fuer die Erlang-Verteilung
+      # zwischen Knoten. nixpkgs' mixRelease legt diese Datei NICHT an, weil
+      # ihr Inhalt zufaellig waere und den Build nicht-reproduzierbar machte.
+      # Ohne sie bricht der Start ab mit:
+      #   cat: .../releases/COOKIE: No such file or directory
+      #
+      # Hier gibt es keine Verteilung. RELEASE_DISTRIBUTION=none oeffnet gar
+      # keinen Verteilungs-Port, der Cookie ist damit bedeutungslos - ein
+      # fester Wert genuegt und ist kein Geheimnis.
+      RELEASE_DISTRIBUTION = "none";
+      RELEASE_COOKIE = "timemachine-standalone";
+
+      # Das Release schreibt Laufzeitdateien nach $RELEASE_ROOT/tmp - und
+      # RELEASE_ROOT liegt im schreibgeschuetzten /nix/store.
+      RELEASE_TMP = elixirState;
     };
 
     serviceConfig = {
