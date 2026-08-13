@@ -41,11 +41,33 @@ in
     recommendedGzipSettings = true;
     recommendedProxySettings = true;
 
-    virtualHosts.${site.domain} = {
-      forceSSL = true;
-      enableACME = true;
-      serverAliases = [ "www.${site.domain}" ];
-      root = webroot;
+    virtualHosts = {
+      ${site.domain} = {
+        forceSSL = true;
+        enableACME = true;
+        serverAliases = [ "www.${site.domain}" ];
+        root = webroot;
+      };
+
+      # Auffang fuer alles, was auf keinen der deklarierten Namen passt.
+      #
+      # Ohne diesen Block faellt nginx auf den ersten konfigurierten vhost
+      # zurueck und praesentiert dessen Zertifikat - fuer einen fremden Namen
+      # also ein falsches, mit Warnung im Browser.
+      #
+      # Konkret betrifft das die CNAMEs mail/phone/playchess/xyz, die auf den
+      # Hauptnamen zeigen und damit auf dieser Maschine landen, ohne dass es
+      # hier einen Dienst dafuer gibt. Unabhaengig davon probieren Bots
+      # staendig fremde Hostnamen gegen jede erreichbare IP durch.
+      #
+      #   rejectSSL   nginx bricht den TLS-Handshake ab, statt irgendein
+      #               Zertifikat auszuliefern (ssl_reject_handshake)
+      #   return 444  nginx-eigener Code: Verbindung schliessen, ohne zu antworten
+      "_" = {
+        default = true;
+        rejectSSL = true;
+        locations."/".return = "444";
+      };
     };
   };
 
