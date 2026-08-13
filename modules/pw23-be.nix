@@ -103,9 +103,10 @@ in
   # und holt beim naechsten stuendlichen Lauf nach - die ETags sorgen dafuer,
   # dass bereits Geholtes nicht erneut zaehlt.
   #
-  # Ohne Token gibt es hier auch kein Geheimnis: Kontonamen und Commit-Mails
-  # stehen ohnehin oeffentlich in jeder Commit-Historie. Die Konfiguration
-  # steht deshalb vollstaendig in site.nix, kein EnvironmentFile noetig.
+  # Ohne Token gibt es hier nichts, was zwingend geheim waere - Kontonamen und
+  # Commit-Mails stehen ohnehin in jeder Commit-Historie. Die Kontonamen stehen
+  # deshalb offen in site.nix; die Commit-Mails liegen in einer verschluesselten
+  # .env, weil sie personenbezogen sind und das Repo veroeffentlicht werden soll.
   # ==========================================================================
 
   # --------------------------------------------------------------------------
@@ -187,8 +188,10 @@ in
       TIMELINE_PATH = timelinePath;
       POLL_INTERVAL_MS = toString (60 * 60 * 1000); # stuendlich
       GITHUB_ACCOUNTS = lib.concatStringsSep "," site.githubAccounts;
-      GITHUB_EMAILS = lib.concatStringsSep "," site.githubEmails;
       START_POLLER = "true";
+
+      # GITHUB_EMAILS steht bewusst NICHT hier, sondern in der
+      # verschluesselten .env - siehe EnvironmentFile weiter unten.
 
       # Elixir-Releases lesen beim Start einen "Cookie" aus
       # releases/COOKIE - das gemeinsame Geheimnis fuer die Erlang-Verteilung
@@ -222,6 +225,11 @@ in
       StateDirectory = "timemachine";
       StateDirectoryMode = "0755"; # nginx muss hinein
       UMask = "0022";              # timeline.json wird 0644
+
+      # Laufzeitwerte aus der von agenix entschluesselten .env. systemd liest
+      # sie NACH `environment`, dort gesetzte Schluessel wuerden also
+      # ueberschrieben - deshalb steht GITHUB_EMAILS nur an einer Stelle.
+      EnvironmentFile = config.age.secrets.timemachine-env.path;
 
       ExecStartPre = migrate;
       ExecStart = "${timemachine}/bin/timemachine start";

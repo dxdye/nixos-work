@@ -24,6 +24,11 @@
       # Standard ist 0400 root:root - passt, da nur die Aktivierung liest.
     };
 
+    timemachine-env = {
+      file = ../secrets/timemachine.env.age;
+      # Von systemd als root gelesen, bevor der Dienst seine Rechte abgibt.
+    };
+
     nextcloud-admin = {
       file = ../secrets/nextcloud-admin.age;
       # nextcloud-setup laeuft als root und reicht die Datei per

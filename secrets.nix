@@ -44,4 +44,12 @@ in
   # Adminpasswort der Nextcloud-Instanz, im Klartext.
   # Wird von services.nextcloud.config.adminpassFile gelesen.
   "secrets/nextcloud-admin.age".publicKeys = alle;
+
+  # Laufzeitwerte fuer timemachine, KEY=VALUE je Zeile. Wird per systemd
+  # EnvironmentFile gelesen - der Inhalt landet nie im /nix/store.
+  #
+  # Aktuell nur GITHUB_EMAILS: Commit-Mailadressen, die nicht im GitHub-Konto
+  # hinterlegt sind. Ohne sie ordnet der Poller eigene Commits als fremde ein -
+  # gemessen 31 von 41 in zwei Repositories.
+  "secrets/timemachine.env.age".publicKeys = alle;
 }

@@ -36,8 +36,6 @@
   # GitHub-Konten, die pw23-BE zwischenspeichert und timemachine pollt.
   githubAccounts = [ "dxdye" "d2tsb" ];
 
-  # Commit-Mailadressen, die nicht im GitHub-Konto hinterlegt sind. Ohne sie
-  # zaehlen eigene Commits als fremde, weil GitHub sie keinem Konto zuordnet.
-  # Stehen ohnehin oeffentlich in jeder Commit-Historie - kein Geheimnis.
-  githubEmails = [ ];
+  # GITHUB_EMAILS steht nicht hier, sondern in secrets/timemachine.env.age -
+  # verschluesselt, per EnvironmentFile eingelesen.
 }
