@@ -1,0 +1,37 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # Wertet alle Flake-Ausgaben aus, ohne zu bauen: Syntaxfehler, fehlende
+      # Modulargumente und kaputte Verweise fallen hier in Sekunden auf.
+      - name: Flake auswerten
+        run: nix flake check --no-build
+
+      # Der eigentliche Beweis: das komplette Systemabbild laesst sich bauen.
+      # Faengt zusaetzlich alles, was erst beim Bauen auffliegt - etwa einen
+      # nicht mehr passenden FOD-Hash der Elixir-Abhaengigkeiten.
+      #
+      # Der Grossteil kommt aus cache.nixos.org; gebaut wird im Wesentlichen
+      # nur der timemachine-Release.
+      - name: System bauen
+        run: |
+          nix build --print-build-logs \
+            .#nixosConfigurations.versa.config.system.build.toplevel
+
+      - name: Closure-Groesse
+        run: nix path-info --closure-size --human-readable ./result

@@ -1,0 +1,47 @@
+name: update-flake-lock
+
+# Oeffnet monatlich einen Pull Request mit aktualisierter flake.lock.
+#
+# Hintergrund: system.autoUpgrade scheidet auf dieser Maschine aus - sie hat
+# zu wenig Speicher, um nixpkgs selbst zu evaluieren. Ohne Automatik altert
+# der Pin still vor sich hin, und da flake.lock oeffentlich ist, ist von
+# aussen genau ablesbar, welche Versionen laufen.
+#
+# Dieser Workflow ersetzt das Ausrollen NICHT. Er erzeugt nur den PR; gebaut
+# und deployt wird weiterhin vom Arbeitsrechner aus:
+#
+#   nix run nixpkgs#nixos-rebuild -- switch \
+#     --flake .#versa --target-host versa --use-substitutes
+
+on:
+  schedule:
+    - cron: "0 4 1 * *" # am Ersten jedes Monats, 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - uses: DeterminateSystems/update-flake-lock@main
+        with:
+          pr-title: "refactor: update flake inputs"
+          pr-body: |
+            Automatische Aktualisierung der Flake-Eingaben.
+
+            Vor dem Zusammenfuehren pruefen, ob `check` durchlaeuft, danach
+            vom Arbeitsrechner ausrollen und den Dienststatus kontrollieren.
+
+            ```
+            {{ env.GIT_COMMIT_MESSAGE }}
+            ```
