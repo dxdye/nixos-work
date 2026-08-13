@@ -17,6 +17,16 @@
   # Auf dem Debian lief trotzdem ein php8.1-fpm mit fastcgi_pass fuer diesen
   # vhost - das war schlicht ueberfluessig. Hier kein PHP.
   # ==========================================================================
+  # Verzeichnisstruktur fuer die statische Website. Deklariert statt von Hand
+  # angelegt - sonst fehlt sie beim naechsten Neuaufsetzen wieder und nginx
+  # liefert 404. Der INHALT ist Zustand (Vite-Build, per rsync eingespielt),
+  # nur die Struktur gehoert in die Konfiguration.
+  systemd.tmpfiles.rules = [
+    "d /var/www 0755 root root - -"
+    "d /var/www/tilmanbertram.com 0755 root root - -"
+    "d /var/www/tilmanbertram.com/html 0755 nginx nginx - -"
+  ];
+
   services.nginx = {
     enable = true;
     recommendedTlsSettings = true;
