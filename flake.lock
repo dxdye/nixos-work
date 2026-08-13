@@ -114,7 +114,7 @@
       },
       "original": {
         "owner": "dxdye",
-        "ref": "refactor/rebuild-project",
+        "ref": "main",
         "repo": "pw23-BE",
         "type": "github"
       }
