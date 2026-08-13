@@ -73,11 +73,17 @@
     interfaces.ens3 = {
       useDHCP = true;
 
-      # Vultr-Metadatendienst: link-local Adresse, aber ueber das Gateway
-      # geroutet. Wird gerne vergessen.
-      ipv4.routes = [
-        { address = "169.254.169.254"; prefixLength = 32; via = "95.179.148.1"; }
-      ];
+      # KEINE statische Route zum Vultr-Metadatendienst (169.254.169.254).
+      #
+      # Die hatte ich aus dem Debian uebernommen. Zwei Gruende, warum sie weg ist:
+      #   1. Vultrs DHCP liefert sie selbst mit - sichtbar an "proto dhcp" in
+      #      `ip route`. Die statische Definition war schlicht doppelt.
+      #   2. Sie lief, bevor das Interface seine DHCP-Adresse hatte, und
+      #      scheiterte mit "Nexthop has invalid gateway" - was
+      #      network-addresses-ens3.service bei jedem Boot fehlschlagen liess.
+      #
+      # Gebraucht wird der Metadatendienst hier ohnehin nicht: den nutzen
+      # cloud-init und der Vultr-Agent, beides laeuft auf diesem System nicht.
 
       # IPv6 kommt per Router Advertisement. Falls das nicht greift,
       # hier die Adresse der neuen Instanz statisch setzen:
