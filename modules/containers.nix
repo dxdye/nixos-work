@@ -1,7 +1,7 @@
 { ... }:
 {
   # ==========================================================================
-  # Phase 6 - noch nicht aktiv (in hosts/fillya/default.nix auskommentiert)
+  # Phase 6 - noch nicht aktiv (in hosts/versa/default.nix auskommentiert)
   #
   # Zwei Dienste:
   #   - Deno-Service auf Port 8000, von nginx per Reverse Proxy erreichbar

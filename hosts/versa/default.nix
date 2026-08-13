@@ -9,7 +9,7 @@
     # ../../modules/containers.nix   # Phase 6: Deno + Elixir
   ];
 
-  networking.hostName = "fillya";
+  networking.hostName = "versa";
 
   # Nicht aendern nach der Erstinstallation - legt fest, gegen welche
   # Zustandsformate (Datenbanken etc.) NixOS migriert.
