@@ -1,5 +1,5 @@
 {
-  description = "versa - Vultr VC2 Amsterdam, NixOS 26.05";
+  description = "NixOS-Serverkonfiguration - Website, Nextcloud, Deno-API, Elixir-Dienst";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";

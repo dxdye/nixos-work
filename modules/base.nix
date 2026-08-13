@@ -84,13 +84,10 @@
 
     # Public Keys sind keine Geheimnisse - die duerfen ins Repo.
     #
-    # Ein Schluessel pro Host: geht einer verloren, sperrt man gezielt einen
-    # Zugang statt aller. Der erste Eintrag stammt noch aus der Zeit, als
-    # dieser Host fillya hiess - er bleibt drin, bis der versa-Schluessel
-    # nachweislich funktioniert, danach kann er raus.
+    # Ein Schluessel pro Arbeitsrechner: geht einer verloren, sperrt man
+    # gezielt einen Zugang statt aller.
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICocR5ZZJa9BHdswECjWCA7B6khE7i+/J13jBsxMIhuC tw@fedora -> fillya"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIiNZ5YB4eSShUPYmrxZZhSdRSC0ZvkludjxZiMgivD4 tw@fedora -> versa"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIiNZ5YB4eSShUPYmrxZZhSdRSC0ZvkludjxZiMgivD4 tw@fedora"
     ];
   };
 
