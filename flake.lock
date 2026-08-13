@@ -102,11 +102,29 @@
         "type": "github"
       }
     },
+    "pw23-be": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786574600,
+        "narHash": "sha256-J+7/kwaP2naqGXe+STuexRdZoMejB7OSHUINNGCU++c=",
+        "owner": "dxdye",
+        "repo": "pw23-BE",
+        "rev": "f70ef56891a90464b54c3ca5a8b4f8a9f349a681",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dxdye",
+        "ref": "refactor/rebuild-project",
+        "repo": "pw23-BE",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
         "disko": "disko",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "pw23-be": "pw23-be"
       }
     },
     "systems": {

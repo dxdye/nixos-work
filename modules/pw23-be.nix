@@ -20,14 +20,37 @@ let
     version = "0.1.0";
     src = "${src}/timemachine";
 
-    # ⚠ Der Hash ist beim ersten Bauen unbekannt. Nix meldet dann den
-    #   richtigen ("got: sha256-..."), und der wird hier eingetragen.
+    # Hash ueber die geholten Hex-Abhaengigkeiten. Aendert sich mix.lock,
+    # aendert sich dieser Wert - Nix meldet dann den neuen ("got: sha256-...")
+    # und er wird hier ersetzt.
     mixFodDeps = pkgs.beamPackages.fetchMixDeps {
       pname = "timemachine-deps";
       version = "0.1.0";
       src = "${src}/timemachine";
-      hash = lib.fakeHash;
+      hash = "sha256-6J6V01x5DxK/gBCrytbMEfH8zmqDEzhlhZ+zGr/1+9c=";
     };
+
+    # exqlite baut einen nativen SQLite-NIF ueber elixir_make. Zwei Dinge
+    # stehen dem im Nix-Sandkasten entgegen:
+    #
+    #   1. elixir_make legt einen Cache unter $HOME an. Im Sandkasten zeigt
+    #      HOME auf /homeless-shelter - einen Pfad, den es absichtlich nicht
+    #      gibt, damit Builds nicht heimlich ins Benutzerverzeichnis schreiben.
+    #      Ein beschreibbares Verzeichnis genuegt.
+    #
+    #   2. Standardmaessig laedt elixir_make ein VORKOMPILIERTES NIF aus dem
+    #      Netz. Der Sandkasten hat keinen Netzzugang - und das waere auch
+    #      unerwuenscht, weil ein heruntergeladenes Binaerpaket die
+    #      Reproduzierbarkeit unterlaufen wuerde. FORCE_BUILD laesst exqlite
+    #      stattdessen aus der mitgelieferten C-Quelle bauen.
+    #
+    # preConfigure, nicht preBuild: mixRelease ruft `mix deps.compile` in der
+    # configurePhase auf, der Fehler passiert also eine Phase vor dem Bauen.
+    preConfigure = ''
+      export HOME=$(mktemp -d)
+    '';
+
+    env.EXQLITE_FORCE_BUILD = "true";
   };
 in
 {

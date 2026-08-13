@@ -32,7 +32,7 @@
     # Zum Entwickeln: url = "path:/home/tw/Programme/pw23-BE";  (nicht
     #                 reproduzierbar, deshalb nicht als Dauerzustand)
     pw23-be = {
-      url = "git+ssh://git@github.com/dxdye/pw23-BE?ref=main";
+      url = "github:dxdye/pw23-BE/refactor/rebuild-project";
       flake = false;
     };
   };
