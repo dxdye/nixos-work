@@ -35,6 +35,18 @@
       url = "github:dxdye/pw23-BE/main";
       flake = false;
     };
+
+    # Frontend: Vite/React-Build, gleiches Muster.
+    #
+    # Baubar aus dem Repository allein ist es erst, seit Texte und Bilder
+    # ausserhalb des Builds liegen (siehe web.nix) - vorher haette ein Build
+    # aus dem GitHub-Stand eine Seite ohne Inhalte und ohne Bilder ergeben.
+    #
+    # Aktualisieren: nix flake update pw23
+    pw23 = {
+      url = "github:d2tsb/PW23/main";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, disko, agenix, ... }@inputs: {

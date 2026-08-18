@@ -1,11 +1,49 @@
-{ site, securityHeaders, ... }:
+{ pkgs, lib, inputs, site, securityHeaders, ... }:
 let
-  webroot = "/var/www/${site.domain}/html";
 
   # Die Seitentexte liegen bewusst nicht im Frontend-Repository und damit auch
   # nicht im Build - das Frontend holt sie zur Laufzeit von /texts.json.
   textsDir = "/var/lib/pw23-texts";
   textsPath = "${textsDir}/texts.json";
+
+  # Dasselbe fuer die Bilder. Sie sind im Frontend-Repo gitignoriert - teils
+  # eigene Fotos, teils fremde Marken (HAW, Campudus, GitHub, LinkedIn), die
+  # nicht mit weiterverbreitet werden sollen.
+  #
+  # Entscheidend fuer die Automatisierbarkeit: imageMap.ts baut reine
+  # Laufzeitpfade (`/images/<name>`), importiert also nichts. Die Bilder
+  # muessen den Build damit ueberhaupt nicht beruehren - er erzeugt nur noch
+  # HTML, JS und CSS und ist ohne sie reproduzierbar.
+  assetsDir = "/var/lib/pw23-assets";
+
+  # Der Vite-Build als Nix-Paket. Damit ist der Webroot deklarativ statt
+  # rsync-Zustand: Ein Deployment ist `nix flake update pw23` plus
+  # nixos-rebuild, ein Rollback eine alte Generation. Und flake.lock haelt
+  # fest, welcher Commit ausgeliefert wird - dieselbe Eigenschaft, die du bei
+  # pw23-be schon nutzt.
+  frontend = pkgs.buildNpmPackage {
+    pname = "pw23-frontend";
+    version = "0.1.0";
+    src = inputs.pw23;
+
+    # Node 26, wie in .nvmrc und shell.nix des Frontends.
+    nodejs = pkgs.nodejs_26;
+
+    # Hash ueber die geholten npm-Abhaengigkeiten - dasselbe Prinzip wie
+    # mixFodDeps in pw23-be.nix. Beim ersten Bauen schlaegt es fehl und Nix
+    # nennt den richtigen Wert ("got: sha256-..."); der gehoert dann hierher.
+    # Aendert sich package-lock.json, aendert sich auch dieser Wert.
+    npmDepsHash = lib.fakeHash;
+
+    # buildNpmPackage ruft in der buildPhase `npm run build` auf, das Ergebnis
+    # liegt danach in dist/. Ein `npm install` gibt es fuer eine statische
+    # Seite nicht, deshalb eine eigene installPhase.
+    installPhase = ''
+      runHook preInstall
+      cp -r dist $out
+      runHook postInstall
+    '';
+  };
 in
 {
   # ==========================================================================
@@ -30,22 +68,23 @@ in
   # das war schlicht ueberfluessig. Hier kein PHP.
   # ==========================================================================
 
-  # Verzeichnisstruktur deklarieren, nicht von Hand anlegen - sonst fehlt sie
-  # beim naechsten Neuaufsetzen und nginx liefert 404. Der INHALT ist Zustand
-  # (Vite-Build, per rsync eingespielt), nur die Struktur gehoert hierher.
+  # Der Webroot ist keine tmpfiles-Regel mehr: Er zeigt jetzt auf das
+  # Frontend-Paket im /nix/store, wird also mit dem System gebaut statt per
+  # rsync befuellt. /var/www wird damit nicht mehr gebraucht.
+  #
+  # Was bleibt, sind die Verzeichnisse fuer den INHALT - Texte und Bilder, die
+  # bewusst nicht im Build stecken.
   systemd.tmpfiles.rules = [
-    "d /var/www 0755 root root - -"
-    "d /var/www/${site.domain} 0755 root root - -"
-    "d ${webroot} 0755 nginx nginx - -"
-
-    # Eigenes Verzeichnis statt Ablage im Webroot: Dorthin schreibt der
-    # rsync-Lauf aus dem Vite-Build, und ein Aufruf mit --delete wuerde eine
-    # texts.json neben den Build-Artefakten mitentfernen. Dieselbe Ueberlegung
-    # wie bei der timeline.json in pw23-be.nix.
-    #
-    # Der Inhalt ist Zustand und wird per scp eingespielt, nur das Verzeichnis
-    # gehoert hierher.
+    # Texte. Eigenes Verzeichnis aus demselben Grund wie die timeline.json in
+    # pw23-be.nix: nicht im Webroot, damit sie kein Deployment mitentfernt.
     "d ${textsDir} 0755 root nginx - -"
+
+    # Bilder, ebenfalls Zustand. Einmalig zu befuellen mit:
+    #   rsync -av public/images/ root@versa:/var/lib/pw23-assets/images/
+    #   rsync -av public/res/    root@versa:/var/lib/pw23-assets/res/
+    "d ${assetsDir} 0755 root nginx - -"
+    "d ${assetsDir}/images 0755 root nginx - -"
+    "d ${assetsDir}/res 0755 root nginx - -"
   ];
 
   services.nginx = {
@@ -60,7 +99,11 @@ in
         forceSSL = true;
         enableACME = true;
         serverAliases = [ "www.${site.domain}" ];
-        root = webroot;
+
+        # Store-Pfad statt /var/www. Store-Pfade sind 0555, nginx kann daraus
+        # lesen - und der Inhalt ist unveraenderlich, was ihn als Webroot
+        # zusaetzlich absichert.
+        root = frontend;
 
         # Gilt auch fuer /api/, weil diese Location kein eigenes add_header
         # setzt und den Block deshalb erbt. Fuer JSON-Antworten ist vor allem
@@ -89,6 +132,32 @@ in
               ${securityHeaders}
               add_header Cache-Control "public, max-age=3600";
               default_type application/json;
+            '';
+          };
+
+          # Bilder aus dem Asset-Verzeichnis statt aus dem Webroot.
+          #
+          # Die Schraegstriche am Ende gehoeren auf BEIDE Seiten: Bei
+          # `location /images/` mit `alias .../images/` ersetzt nginx das
+          # Praefix. Fehlt einer, entstehen Pfade wie /var/lib/pw23-assetsimages
+          # oder doppelte Trenner.
+          #
+          # Ein Jahr Cache waere hier falsch: Die Dateinamen tragen keinen
+          # Inhalts-Hash, ein ausgetauschtes Profilbild behielte also seinen
+          # Namen. Eine Woche ist der Kompromiss.
+          "/images/" = {
+            alias = "${assetsDir}/images/";
+            extraConfig = ''
+              ${securityHeaders}
+              add_header Cache-Control "public, max-age=604800";
+            '';
+          };
+
+          "/res/" = {
+            alias = "${assetsDir}/res/";
+            extraConfig = ''
+              ${securityHeaders}
+              add_header Cache-Control "public, max-age=604800";
             '';
           };
         };
