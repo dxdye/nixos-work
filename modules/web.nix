@@ -1,6 +1,11 @@
 { site, securityHeaders, ... }:
 let
   webroot = "/var/www/${site.domain}/html";
+
+  # Die Seitentexte liegen bewusst nicht im Frontend-Repository und damit auch
+  # nicht im Build - das Frontend holt sie zur Laufzeit von /texts.json.
+  textsDir = "/var/lib/pw23-texts";
+  textsPath = "${textsDir}/texts.json";
 in
 {
   # ==========================================================================
@@ -32,6 +37,15 @@ in
     "d /var/www 0755 root root - -"
     "d /var/www/${site.domain} 0755 root root - -"
     "d ${webroot} 0755 nginx nginx - -"
+
+    # Eigenes Verzeichnis statt Ablage im Webroot: Dorthin schreibt der
+    # rsync-Lauf aus dem Vite-Build, und ein Aufruf mit --delete wuerde eine
+    # texts.json neben den Build-Artefakten mitentfernen. Dieselbe Ueberlegung
+    # wie bei der timeline.json in pw23-be.nix.
+    #
+    # Der Inhalt ist Zustand und wird per scp eingespielt, nur das Verzeichnis
+    # gehoert hierher.
+    "d ${textsDir} 0755 root nginx - -"
   ];
 
   services.nginx = {
@@ -53,6 +67,31 @@ in
         # nosniff relevant: ein Browser, der JSON als HTML interpretiert, ist
         # der klassische Weg zu XSS.
         extraConfig = securityHeaders;
+
+        locations = {
+          # Das Frontend nutzt BrowserRouter: /impressum existiert nur
+          # clientseitig, es gibt keine gleichnamige Datei im Webroot. Ohne
+          # tryFiles antwortet nginx darauf mit 404 - allerdings nur beim
+          # direkten Aufruf und beim Neuladen. Navigiert man aus der Anwendung
+          # heraus dorthin, laeuft alles ueber die History-API und der Fehler
+          # bleibt unbemerkt.
+          #
+          # Diese Location setzt kein eigenes add_header und erbt deshalb die
+          # securityHeaders von oben.
+          "/".tryFiles = "$uri $uri/ /index.html";
+
+          # Genau eine Datei aus dem Textverzeichnis. "=" ist ein exakter
+          # Treffer, nichts anderes unterhalb von /var/lib wird dadurch
+          # erreichbar.
+          "= /texts.json" = {
+            alias = textsPath;
+            extraConfig = ''
+              ${securityHeaders}
+              add_header Cache-Control "public, max-age=3600";
+              default_type application/json;
+            '';
+          };
+        };
       };
 
       # Auffang fuer alles, was auf keinen der deklarierten Namen passt.
@@ -77,12 +116,7 @@ in
     };
   };
 
-  # Deno-Service hinter dem Reverse Proxy - erst einkommentieren, wenn der
-  # Container laeuft, sonst scheitert der nginx-Start am nicht erreichbaren
-  # Upstream.
-  #
-  # services.nginx.virtualHosts.${site.domain}.locations."/api/" = {
-  #   proxyPass = "http://127.0.0.1:8000/";
-  #   proxyWebsockets = true;
-  # };
+  # Die Locations /api/ und /timeline.json gehoeren zu den Diensten und stehen
+  # deshalb in pw23-be.nix, nicht hier. NixOS fuehrt beide Attributsaetze fuer
+  # denselben vhost zusammen.
 }
