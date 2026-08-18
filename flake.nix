@@ -43,6 +43,11 @@
     # aus dem GitHub-Stand eine Seite ohne Inhalte und ohne Bilder ergeben.
     #
     # Aktualisieren: nix flake update pw23
+    #
+    # Zum Testen eines Branches vor dem Merge:
+    #   url = "github:d2tsb/PW23?ref=feat/mein-branch";
+    # ?ref= und nicht github:owner/repo/feat/... - ein Branchname mit
+    # Schraegstrich waere im Pfad mehrdeutig.
     pw23 = {
       url = "github:d2tsb/PW23/main";
       flake = false;

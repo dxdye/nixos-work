@@ -30,10 +30,12 @@ let
     nodejs = pkgs.nodejs_26;
 
     # Hash ueber die geholten npm-Abhaengigkeiten - dasselbe Prinzip wie
-    # mixFodDeps in pw23-be.nix. Beim ersten Bauen schlaegt es fehl und Nix
-    # nennt den richtigen Wert ("got: sha256-..."); der gehoert dann hierher.
-    # Aendert sich package-lock.json, aendert sich auch dieser Wert.
-    npmDepsHash = lib.fakeHash;
+    # mixFodDeps in pw23-be.nix. Aendert sich package-lock.json, aendert sich
+    # auch dieser Wert; Nix nennt den neuen dann im Fehlertext ("got: ...").
+    #
+    # Vorab berechnen, statt den Fehlschlag abzuwarten:
+    #   nix run 'nixpkgs#prefetch-npm-deps' -- package-lock.json
+    npmDepsHash = "sha256-NsDmyVQkMEh98R61b9ng5aPVW42zJcDTyUs4d/yEGtQ=";
 
     # buildNpmPackage ruft in der buildPhase `npm run build` auf, das Ergebnis
     # liegt danach in dist/. Ein `npm install` gibt es fuer eine statische
