@@ -105,11 +105,11 @@
     "pw23": {
       "flake": false,
       "locked": {
-        "lastModified": 1787081316,
-        "narHash": "sha256-xHcLq7MCpfp7kP9PVq/tnmLUOQ0aP2oJdDSJDtEcY30=",
+        "lastModified": 1787085889,
+        "narHash": "sha256-EgnJxQ+7nTJ/AUvU/d+Pwm7kgmuoZIEvysrhZdv7gOw=",
         "owner": "d2tsb",
         "repo": "PW23",
-        "rev": "37c0b829c57a30600ab9c2a35fdfccbc1337ef5d",
+        "rev": "60ad929eca43ada5b666e5921ed9fb1b2ab6dc9f",
         "type": "github"
       },
       "original": {
@@ -122,11 +122,11 @@
     "pw23-be": {
       "flake": false,
       "locked": {
-        "lastModified": 1786574600,
-        "narHash": "sha256-J+7/kwaP2naqGXe+STuexRdZoMejB7OSHUINNGCU++c=",
+        "lastModified": 1787091090,
+        "narHash": "sha256-8a3vcwbibf5jk7udWkLF2CdLepc4Kc8mcEvOuGetVe0=",
         "owner": "dxdye",
         "repo": "pw23-BE",
-        "rev": "f70ef56891a90464b54c3ca5a8b4f8a9f349a681",
+        "rev": "0ba25383bac2ad01443e722d3e6c8f142d406c12",
         "type": "github"
       },
       "original": {
