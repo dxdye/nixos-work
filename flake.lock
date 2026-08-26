@@ -105,11 +105,11 @@
     "pw23": {
       "flake": false,
       "locked": {
-        "lastModified": 1787092237,
-        "narHash": "sha256-pmk0BNTdwl9cImqzYSM8gFXy1uq7kN+xoeIabGrhPQw=",
+        "lastModified": 1787732785,
+        "narHash": "sha256-YxmNdiM73ZsUApjSG6TQeo+ChAmOW2ga9RrQgOxv4D8=",
         "owner": "d2tsb",
         "repo": "PW23",
-        "rev": "f9d6c7158867ccf6199372303188fe45469e3d65",
+        "rev": "76698032415ced9bb5dd63bb71b8c9846be50dab",
         "type": "github"
       },
       "original": {
