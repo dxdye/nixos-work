@@ -1,6 +1,62 @@
 { config, pkgs, site, ... }:
 {
   # ==========================================================================
+  # TEMPORAER: PHP 8.4.27 vorgezogen ("PHP2Shell", BSI-Warnung vom 21.10.2026,
+  # CVE-2026-109618 und CVE-2026-109619, CVSS 9.2, Remote Code Execution ohne
+  # Anmeldung, PoC oeffentlich).
+  #
+  # nixos-26.05 stand am 20.10.2026 noch auf 8.4.26; master hatte den Fix
+  # bereits. Hier wird nur Version und Quelle ausgetauscht - overrideAttrs auf
+  # dem gewrappten Paket ruft generic.nix neu auf und behaelt die
+  # Extension-Liste aus nixpkgs bei. Der Hash stammt aus
+  # pkgs/development/interpreters/php/default.nix auf master; Nix prueft ihn
+  # beim Herunterladen selbst.
+  #
+  # Das Overlay greift fuer alles, was pkgs.php84 nutzt - hier also Nextcloud
+  # samt php-fpm. Es baut PHP und alle Extensions lokal, weil der Cache den
+  # Stand noch nicht hat.
+  #
+  # Zweiter Teil (packageOverrides): 8.4.27 bringt drei neue Tests fuer die
+  # Extension "filter" mit (tests/oom_filter_*.phpt). Die starten PHP als
+  # Unterprozess mit -n, also ohne ini - und weil nixpkgs filter als
+  # Shared-Extension baut, ist sie dort nicht geladen; die Tests schlagen
+  # fehl und der Build bricht ab. master laedt in den Tests das frisch
+  # gebaute filter.so explizit nach (pkgs/top-level/php-packages.nix);
+  # das ist hier 1:1 uebernommen.
+  #
+  # ENTFERNEN, sobald nixos-26.05 nachgezogen hat. Pruefen mit:
+  #   nix flake update nixpkgs
+  #   nix eval --raw nixpkgs#php84.version      # >= 8.4.27 -> Overlay loeschen
+  # ==========================================================================
+  nixpkgs.overlays = [
+    (final: prev: {
+      php84 =
+        (prev.php84.override {
+          packageOverrides = phpFinal: phpPrev: {
+            extensions = phpPrev.extensions // {
+              filter = phpPrev.extensions.filter.overrideAttrs (old: {
+                postConfigure = (old.postConfigure or "") + ''
+                  substituteInPlace \
+                    tests/oom_filter_input.phpt \
+                    tests/oom_filter_input_array.phpt \
+                    tests/oom_filter_default_encoded.phpt \
+                    --replace-fail "'-n'," "'-n', '-d', 'extension=$PWD/modules/filter.so',"
+                '';
+              });
+            };
+          };
+        }).overrideAttrs
+          (old: rec {
+            version = "8.4.27";
+            src = prev.fetchurl {
+              url = "https://www.php.net/distributions/php-${version}.tar.bz2";
+              hash = "sha256-slMKh3xyL0sIyeF0owywi6wrfhkD7m6eMV8KqfX4LCQ=";
+            };
+          });
+    })
+  ];
+
+  # ==========================================================================
   # Nextcloud - vollstaendig vom alten Server uebernommen.
   #
   # Der Hostname trug historisch "owncloud", die Software war aber bereits
